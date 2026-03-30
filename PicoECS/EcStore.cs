@@ -31,12 +31,10 @@ public sealed class EcStore
         _lock.EnterWriteLock();
         try
         {
-            var internalParent = (IInternalEntity)parent;
-            
             // Assign ID to parent if it doesn't have one
-            if (internalParent.Id == 0)
+            if (parent.Id == 0)
             {
-                internalParent.Id = generateUniqueId();
+                parent.Id = generateUniqueId();
             }
 
             bool childrenChanged = false;
@@ -44,35 +42,34 @@ public sealed class EcStore
 
             if (children.Length > 0)
             {
-                currentChildren = [.. internalParent.ChildIds];
+                currentChildren = [.. parent.ChildIds];
 
                 foreach (var child in children)
                 {
                     if (child is null) continue;
-                    var internalChild = (IInternalEntity)child;
 
                     // Assign ID to child if it doesn't have one
-                    if (internalChild.Id == 0)
+                    if (child.Id == 0)
                     {
-                        internalChild.Id = generateUniqueId();
+                        child.Id = generateUniqueId();
                     }
 
                     // Validation: Ensure child doesn't already have a different parent
-                    validateChildRelationship(internalChild, internalParent.Id);
+                    validateChildRelationship(child, parent.Id);
 
-                    if (currentChildren.Add(internalChild.Id))
+                    if (currentChildren.Add(child.Id))
                     {
                         childrenChanged = true;
                     }
                     
-                    internalChild.ParentId = internalParent.Id;
+                    child.ParentId = parent.Id;
                     ensureEntityIndexed(child);
                 }
             }
 
             if (childrenChanged && currentChildren != null)
             {
-                internalParent.ChildIds = currentChildren.ToArray();
+                parent.ChildIds = currentChildren.ToArray();
             }
 
             ensureEntityIndexed(parent);
@@ -83,7 +80,7 @@ public sealed class EcStore
         }
     }
 
-    private void validateChildRelationship(IInternalEntity child, uint newParentId)
+    private void validateChildRelationship(Entity child, uint newParentId)
     {
         if (child.ParentId != 0 && child.ParentId != newParentId)
         {
@@ -92,7 +89,7 @@ public sealed class EcStore
 
         if (_idIndex.TryGetValue(child.Id, out var existingChild))
         {
-            var existingParentId = ((IInternalEntity)existingChild).ParentId;
+            var existingParentId = existingChild.ParentId;
             if (existingParentId != 0 && existingParentId != newParentId)
             {
                 throw new InvalidOperationException($"Existing child entity {child.Id} already belongs to parent {existingParentId}.");
@@ -223,7 +220,7 @@ public sealed class EcStore
         _lock.EnterReadLock();
         try
         {
-            return ((IInternalEntity)parent).ChildIds.Length;
+            return parent.ChildIds.Length;
         }
         finally
         {
@@ -273,7 +270,7 @@ public sealed class EcStore
             {
                 if (entity.Id == 0 || !toRemove.Add(entity.Id)) continue;
 
-                foreach (var childId in ((IInternalEntity)entity).ChildIds)
+                foreach (var childId in entity.ChildIds)
                 {
                     if (_idIndex.TryGetValue(childId, out var child))
                     {
@@ -341,7 +338,7 @@ public sealed class EcStore
         _lock.EnterReadLock();
         try
         {
-            var parentId = ((IInternalEntity)entity).ParentId;
+            var parentId = entity.ParentId;
             return parentId != 0 && _idIndex.TryGetValue(parentId, out var parent) 
                 ? parent as T 
                 : null;
@@ -362,7 +359,7 @@ public sealed class EcStore
         _lock.EnterReadLock();
         try
         {
-            var childIds = ((IInternalEntity)parent).ChildIds;
+            var childIds = parent.ChildIds;
             var result = new List<T>(childIds.Length);
             foreach (var childId in childIds)
             {
@@ -390,7 +387,7 @@ public sealed class EcStore
         try
         {
             var result = new List<Entity>();
-            var childIds = ((IInternalEntity)parent).ChildIds;
+            var childIds = parent.ChildIds;
             
             // Pre-allocate stack to avoid resizing
             var stack = new Stack<uint>(childIds.Length > 0 ? childIds.Length : 4);
@@ -406,7 +403,7 @@ public sealed class EcStore
                 if (_idIndex.TryGetValue(id, out var current))
                 {
                     result.Add(current);
-                    var currentChildIds = ((IInternalEntity)current).ChildIds;
+                    var currentChildIds = current.ChildIds;
                     for (int i = currentChildIds.Length - 1; i >= 0; i--)
                     {
                         stack.Push(currentChildIds[i]);
