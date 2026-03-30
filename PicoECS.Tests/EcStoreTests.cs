@@ -5,7 +5,7 @@ namespace PicoECS.Tests;
 public class TestEntity : Entity { }
 public class OtherEntity : Entity { }
 
-public class StoreTests
+public class EcStoreTests
 {
     [Fact]
     public void Add_AssignsIdsAndMaintainsHierarchy()
