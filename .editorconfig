@@ -1,0 +1,14 @@
+root = true
+
+[*.cs]
+# Define a group for private methods
+dotnet_naming_symbols.private_methods_group.applicable_kinds = method
+dotnet_naming_symbols.private_methods_group.applicable_accessibilities = private
+
+# Define the camelCase style
+dotnet_naming_style.camel_case_style.capitalization = camel_case
+
+# Enforce the rule
+dotnet_naming_rule.private_methods_must_be_camel_case.severity = warning
+dotnet_naming_rule.private_methods_must_be_camel_case.symbols = private_methods_group
+dotnet_naming_rule.private_methods_must_be_camel_case.style = camel_case_style

@@ -17,7 +17,7 @@ public sealed class EcStore
     // Fast atomic counter for ID generation
     private uint _nextId = 0;
 
-    public int Count => GetCount();
+    public int Count => getCount();
 
     /// <summary>
     /// Adds a parent entity and its children to the store, establishing relationships.
@@ -36,7 +36,7 @@ public sealed class EcStore
             // Assign ID to parent if it doesn't have one
             if (internalParent.Id == 0)
             {
-                internalParent.Id = GenerateUniqueId();
+                internalParent.Id = generateUniqueId();
             }
 
             bool childrenChanged = false;
@@ -54,11 +54,11 @@ public sealed class EcStore
                     // Assign ID to child if it doesn't have one
                     if (internalChild.Id == 0)
                     {
-                        internalChild.Id = GenerateUniqueId();
+                        internalChild.Id = generateUniqueId();
                     }
 
                     // Validation: Ensure child doesn't already have a different parent
-                    ValidateChildRelationship(internalChild, internalParent.Id);
+                    validateChildRelationship(internalChild, internalParent.Id);
 
                     if (currentChildren.Add(internalChild.Id))
                     {
@@ -66,7 +66,7 @@ public sealed class EcStore
                     }
                     
                     internalChild.ParentId = internalParent.Id;
-                    EnsureEntityIndexed(child);
+                    ensureEntityIndexed(child);
                 }
             }
 
@@ -75,7 +75,7 @@ public sealed class EcStore
                 internalParent.ChildIds = currentChildren.ToArray();
             }
 
-            EnsureEntityIndexed(parent);
+            ensureEntityIndexed(parent);
         }
         finally
         {
@@ -83,7 +83,7 @@ public sealed class EcStore
         }
     }
 
-    private void ValidateChildRelationship(IInternalEntity child, uint newParentId)
+    private void validateChildRelationship(IInternalEntity child, uint newParentId)
     {
         if (child.ParentId != 0 && child.ParentId != newParentId)
         {
@@ -100,7 +100,7 @@ public sealed class EcStore
         }
     }
 
-    private void EnsureEntityIndexed(Entity entity)
+    private void ensureEntityIndexed(Entity entity)
     {
         var id = entity.Id;
         // TryAdd returns true if the key was not found and was added.
@@ -118,7 +118,7 @@ public sealed class EcStore
         }
     }
 
-    private uint GenerateUniqueId()
+    private uint generateUniqueId()
     {
         uint id;
         do
@@ -318,7 +318,7 @@ public sealed class EcStore
         }
     }
 
-    private int GetCount()
+    private int getCount()
     {
         _lock.EnterReadLock();
         try
