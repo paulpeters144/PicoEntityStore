@@ -1,0 +1,74 @@
+.vs/
+.vscode/
+
+# Build results
+[Dd]ebug/
+[Dd]ebugPublic/
+[Rr]elease/
+[Rr]eleases/
+x64/
+x86/
+[Ww][Ii][Nn]32/
+[Aa][Rr][Mm]/
+[Aa][Rr][Mm]64/
+bld/
+[Bb]in/
+[Oo]bj/
+[Ll]og/
+[Ll]ogs/
+
+# Visual Studio cache/options
+.vs/
+
+# Visual Studio Code
+.vscode/
+*.code-workspace
+
+# Rider
+.idea/
+*.sln.iml
+*.swp
+*.swo
+
+# User-specific files
+*.rsuser
+*.suo
+*.user
+*.userosscache
+*.sln.docstates
+
+# Build outputs
+*.dll
+*.exe
+*.pdb
+*.dbmdl
+*.mdf
+*.ldf
+*.stackdump
+
+# NuGet
+*.nupkg
+*.snupkg
+.nuget/
+
+# Test Results
+TestResults/
+*.trx
+*.coverage
+
+# Package Files
+packages/
+.packages/
+
+# Local environment
+.env
+.env.local
+
+# OS specific
+.DS_Store
+Thumbs.db
+
+# Backup files
+*.backup
+*.bak
+*~
