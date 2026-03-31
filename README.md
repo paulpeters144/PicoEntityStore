@@ -19,12 +19,7 @@ public sealed class PicoEntityStore
     // Retrieval
     public T? Get<T>(uint id) where T : PicoEntity;
     public T? First<T>() where T : PicoEntity;
-    public List<PicoEntity> All();
-    public List<T> All<T>() where T : PicoEntity;
-
-    // Iteration
-    public void ForEach(Action<PicoEntity> action);
-    public void ForEach<T>(Action<T> action) where T : PicoEntity;
+    public List<PicoEntity> All(params Type[] types);
 
     // Navigation
     public PicoEntity? Parent(PicoEntity entity);
@@ -119,17 +114,15 @@ store.Remove(player);
 
 ---
 
-## 🔍 4. Querying & Iteration
+## 🔍 4. Querying
 
-### 4.1 Efficient Iteration with `ForEach`
-Use `ForEach<T>` to execute logic on all entities of a specific type. 
-
-> **Performance Tip:** `ForEach<T>` uses **exact type matching** for $O(1)$ lookup speed. It is significantly faster than filtering a large list with LINQ.
+You can query items by fetching `All()` matching entities.
 
 ```csharp
-store.ForEach<Position>(p => {
+var items = store.All(typeof(Position));
+foreach(Position p in items) {
     p.X += 1.0f;
-});
+}
 ```
 
 ---
@@ -150,18 +143,18 @@ The following benchmarks demonstrate the performance of `PicoEntityStore` method
 
 | Operation | Scale / Setup | Mean Execution Time | Ops per Frame (120 FPS) |
 | :--- | :--- | :--- | :--- |
-| **Add** | Bulk add 10,000 entities | ~498.81 µs | **16** |
+| **Add** | Bulk add 10,000 entities | ~520.88 µs | **16** |
 | **Get\<T\>** | Retrieve single entity | ~10.32 ns | **807,493** |
-| **Descendants**| Traverse 100 deep hierarchy| ~1.03 µs | **8,092** |
-| **All** | Retrieve 10,000 entities | ~3.17 µs | **2,628** |
-| **All\<T\>** | Filter 10,000 entities | ~9.14 µs | **911** |
-| **First\<T\>** | Retrieve first entity | ~11.28 ns | **738,770** |
-| **ForEach** | Iterate 10,000 entities | ~3.88 µs | **2,145** |
-| **ForEach\<T\>** | Iterate 10,000 entities by type| ~3.07 µs | **2,716** |
-| **Remove** | Remove 100 entities | ~23.64 µs | **352** |
+| **Descendants**| Traverse 100 deep hierarchy| ~1.05 µs | **7,936** |
+| **All** | Retrieve 10,000 entities | ~3.24 µs | **2,571** |
+| **All(Type)** | Filter 10,000 entities | ~1.73 µs | **4,816** |
+| **First\<T\>** | Retrieve first entity | ~11.34 ns | **734,861** |
+| **Remove** | Remove 100 entities | ~19.88 µs | **419** |
 
 *Note: "Ops per Frame" indicates how many times the exact operation (including its internal loops over the specified scale) can be executed within a single 8.33ms frame.*
 
 ## ⚖️ License
 This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+
+IT License - see the [LICENSE](LICENSE) file for details.
 

@@ -67,8 +67,7 @@ public class StoreApiTests
         var transform = new Transform { X = 5, Y = 5 };
         store.Add(player1, transform);
 
-        int playerCount = 0;
-        store.ForEach<Player>(p => playerCount++);
+        int playerCount = store.All(typeof(Player)).Count;
         Assert.Equal(2, playerCount);
 
         var firstTransform = store.First<Transform>();
@@ -149,20 +148,58 @@ public class StoreApiTests
     }
 
     [Fact]
+    public void Store_Can_Retrieve_Entities_By_Type_Generic()
+    {
+        var store = new PicoEntityStore();
+        store.Add(new Player { Name = "Hero" });
+        store.Add(new Transform { X = 10 });
+        store.Add(new Player { Name = "Villain" });
+
+        var players = store.All(typeof(Player));
+        Assert.Equal(2, players.Count);
+        Assert.All(players, p => Assert.IsType<Player>(p));
+    }
+
+    [Fact]
+    public void Store_All_Type_Array_Optimized()
+    {
+        var store = new PicoEntityStore();
+        store.Add(new Player { Name = "Hero" });
+        store.Add(new Transform { X = 10 });
+        store.Add(new InventoryItem { ItemId = "sword" });
+
+        var results = store.All(typeof(Player), typeof(Transform));
+        Assert.Equal(2, results.Count);
+        Assert.Contains(results, r => r is Player);
+        Assert.Contains(results, r => r is Transform);
+    }
+
+    [Fact]
+    public void Store_All_Type_Array_Duplicate_Types()
+    {
+        var store = new PicoEntityStore();
+        var player = new Player { Name = "Hero" };
+        store.Add(player);
+
+        // Current implementation will include the player twice if the type is passed twice
+        var results = store.All(typeof(Player), typeof(Player));
+        Assert.Equal(2, results.Count);
+        Assert.All(results, r => Assert.Same(player, r));
+    }
+
+    [Fact]
     public void Store_Is_ThreadSafe_During_Concurrent_Adds_And_Queries()
     {
         var store = new PicoEntityStore();
         
-        Parallel.For(0, 100, i => 
+        Parallel.For(0, 100, i =>
         {
             var player = new Player { Name = $"Player {i}" };
             store.Add(player);
-            
-            bool found = false;
-            store.ForEach<Player>(p => found = true);
+
+            bool found = store.All(typeof(Player)).Count > 0;
             Assert.True(found);
         });
-
         Assert.Equal(100, store.Count);
     }
 
@@ -201,35 +238,6 @@ public class StoreApiTests
         Assert.Equal(2, allDescendants.Count);
         Assert.Contains(parent, allDescendants);
         Assert.Contains(child, allDescendants);
-    }
-
-    [Fact]
-    public void Store_Differentiates_Between_Exact_Type_Queries_And_Polymorphic_Relationships()
-    {
-        var store = new PicoEntityStore();
-        var weapon = new Weapon { Damage = 50 };
-        var basicItem = new InventoryItem { ItemId = "Apple" };
-
-        store.Add(weapon);
-        store.Add(basicItem);
-
-        // 1. ForEach<T> uses EXACT type matching for maximum performance (O(1) dictionary lookup).
-        // It will NOT iterate over derived types.
-        int itemCount = 0;
-        store.ForEach<InventoryItem>(i => itemCount++);
-        Assert.Equal(1, itemCount); // Only the "Apple", not the Weapon
-        
-        int weaponCount = 0;
-        store.ForEach<Weapon>(w => weaponCount++);
-        Assert.Equal(1, weaponCount);
-
-        // 2. In contrast, relationship queries like Children are polymorphic.
-        var player = new Player();
-        store.Add(player, weapon, basicItem);
-
-        // Querying children returns BOTH the basic item and the derived Weapon.
-        var childItems = store.Children(player);
-        Assert.Equal(2, childItems.Count);
     }
 
     [Fact]

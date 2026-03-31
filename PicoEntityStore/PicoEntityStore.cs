@@ -30,90 +30,54 @@ public sealed class PicoEntityStore
     }
 
     /// <summary>
-    /// Retrieves all entities in the store.
+    /// Retrieves all entities in the store, or only those matching any of the specified types if provided.
     /// </summary>
-    public List<PicoEntity> All()
+    public List<PicoEntity> All(params Type[] types)
     {
         _lock.EnterReadLock();
         try
         {
-            var result = new List<PicoEntity>(_idIndex.Count);
-            foreach (var list in _typeLists.Values)
+            if (types == null || types.Length == 0)
             {
-                result.AddRange(list);
-            }
-            return result;
-        }
-        finally
-        {
-            _lock.ExitReadLock();
-        }
-    }
-
-    /// <summary>
-    /// Retrieves all entities of the specified type.
-    /// </summary>
-    public List<T> All<T>() where T : PicoEntity
-    {
-        _lock.EnterReadLock();
-        try
-        {
-            if (_typeLists.TryGetValue(typeof(T), out var list))
-            {
-                var result = new List<T>(list.Count);
-                foreach (var entity in list)
+                var result = new List<PicoEntity>(_idIndex.Count);
+                foreach (var list in _typeLists.Values)
                 {
-                    result.Add((T)entity);
+                    result.AddRange(list);
                 }
                 return result;
             }
-            return [];
-        }
-        finally
-        {
-            _lock.ExitReadLock();
-        }
-    }
 
-    /// <summary>
-    /// Executes the provided action on every entity in the store.
-    /// </summary>
-    public void ForEach(Action<PicoEntity> action)
-    {
-        ArgumentNullException.ThrowIfNull(action);
-        _lock.EnterReadLock();
-        try
-        {
-            foreach (var list in _typeLists.Values)
+            // Fast path for single type
+            if (types.Length == 1)
             {
-                foreach (var entity in list)
+                if (_typeLists.TryGetValue(types[0], out var singleList))
                 {
-                    action(entity);
+                    return [.. singleList];
+                }
+                return [];
+            }
+
+            // Calculate total capacity to avoid re-allocations
+            int totalCount = 0;
+            foreach (var type in types)
+            {
+                if (_typeLists.TryGetValue(type, out var list))
+                {
+                    totalCount += list.Count;
                 }
             }
-        }
-        finally
-        {
-            _lock.ExitReadLock();
-        }
-    }
 
-    /// <summary>
-    /// Executes the provided action on every entity of the specified type.
-    /// </summary>
-    public void ForEach<T>(Action<T> action) where T : PicoEntity
-    {
-        ArgumentNullException.ThrowIfNull(action);
-        _lock.EnterReadLock();
-        try
-        {
-            if (_typeLists.TryGetValue(typeof(T), out var list))
+            if (totalCount == 0) return [];
+
+            var resultList = new List<PicoEntity>(totalCount);
+            foreach (var type in types)
             {
-                foreach (var entity in list)
+                if (_typeLists.TryGetValue(type, out var list))
                 {
-                    action((T)entity);
+                    resultList.AddRange(list);
                 }
             }
+            return resultList;
         }
         finally
         {

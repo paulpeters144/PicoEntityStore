@@ -166,27 +166,23 @@ public class PicoEntityStoreTests
     }
 
     [Fact]
-    public void ForEach_ExecutesOnAllEntities()
+    public void All_WithTypes_ReturnsOnlyMatchingTypes()
     {
         var store = new PicoEntityStore();
         store.Add(new TestPicoEntity());
         store.Add(new OtherPicoEntity());
-        int count = 0;
-        store.ForEach(e => count++);
-        Assert.Equal(2, count);
+        store.Add(new TestPicoEntity()); // Add another of same type
+
+        // Dummy entity type to verify excluded types
+        var excluded = new DummyPicoEntity();
+        store.Add(excluded);
+
+        var allItems = store.All(typeof(TestPicoEntity), typeof(OtherPicoEntity));
+        Assert.Equal(3, allItems.Count);
+        Assert.DoesNotContain(excluded, allItems);
     }
 
-    [Fact]
-    public void ForEach_Generic_ExecutesOnMatchingType()
-    {
-        var store = new PicoEntityStore();
-        store.Add(new TestPicoEntity());
-        store.Add(new TestPicoEntity());
-        store.Add(new OtherPicoEntity());
-        int count = 0;
-        store.ForEach<TestPicoEntity>(e => count++);
-        Assert.Equal(2, count);
-    }
+    private class DummyPicoEntity : PicoEntity { }
 
     #endregion
 
@@ -374,7 +370,7 @@ public class PicoEntityStoreTests
         });
         var task2 = Task.Run(() => 
         {
-            for(int i=0; i<500; i++) store.ForEach(e => { });
+            for(int i=0; i<500; i++) store.All();
         });
 
         await Task.WhenAll(task1, task2);
@@ -438,16 +434,6 @@ public class PicoEntityStoreTests
     }
 
     [Fact]
-    public void ForEach_Generic_ExecutesZeroTimesWhenNoneMatch()
-    {
-        var store = new PicoEntityStore();
-        store.Add(new OtherPicoEntity());
-        int count = 0;
-        store.ForEach<TestPicoEntity>(e => count++);
-        Assert.Equal(0, count);
-    }
-
-    [Fact]
     public void Remove_MultipleTimes_Idempotent()
     {
         var store = new PicoEntityStore();
@@ -470,7 +456,7 @@ public class PicoEntityStoreTests
         store.Add(parent, child);
         
         Assert.Equal(countBefore, store.Count);
-        Assert.Equal(1, store.Children(parent).Count);
+        Assert.Single(store.Children(parent));
     }
 
     [Fact]

@@ -82,27 +82,15 @@ public class StoreBenchmarks
     }
 
     [Benchmark]
-    public void AllGeneric()
+    public void AllType()
     {
-        var all = _store.All<BenchmarkPicoEntity>();
+        var all = _store.All(typeof(BenchmarkPicoEntity));
     }
 
     [Benchmark]
     public void First()
     {
         var first = _store.First<BenchmarkPicoEntity>();
-    }
-
-    [Benchmark]
-    public void ForEach()
-    {
-        _store.ForEach(e => { });
-    }
-
-    [Benchmark]
-    public void ForEachGeneric()
-    {
-        _store.ForEach<BenchmarkPicoEntity>(e => { });
     }
 
     [Benchmark]
