@@ -65,64 +65,19 @@ public sealed class EcStore
     }
 
     /// <summary>
-    /// Gets all entities filtered by type.
+    /// Executes the provided action on every entity in the store.
     /// </summary>
-    public List<Entity> GetAll(params Type[] types)
+    public void ForEach(Action<Entity> action)
     {
-        var result = new List<Entity>();
-        GetAll(result, types);
-        return result;
-    }
-
-    /// <summary>
-    /// Fills the provided collection with entities filtered by type.
-    /// </summary>
-    public void GetAll(ICollection<Entity> result, params Type[] types)
-    {
-        ArgumentNullException.ThrowIfNull(result);
-        if (types == null || types.Length == 0)
-        {
-            GetAll(result);
-            return;
-        }
-
+        ArgumentNullException.ThrowIfNull(action);
         _lock.EnterReadLock();
         try
         {
-            // For small number of types, avoid HashSet allocation
-            if (types.Length <= 4)
+            foreach (var list in _typeLists.Values)
             {
-                for (int i = 0; i < types.Length; i++)
+                foreach (var entity in list)
                 {
-                    var type = types[i];
-                    if (type is null) continue;
-                    
-                    // Simple duplicate check for small arrays
-                    bool duplicate = false;
-                    for (int j = 0; j < i; j++)
-                    {
-                        if (types[j] == type)
-                        {
-                            duplicate = true;
-                            break;
-                        }
-                    }
-                    
-                    if (!duplicate && _typeLists.TryGetValue(type, out var list))
-                    {
-                        foreach (var entity in list) result.Add(entity);
-                    }
-                }
-            }
-            else
-            {
-                var processedTypes = new HashSet<Type>(types.Length);
-                foreach (var type in types)
-                {
-                    if (type is not null && processedTypes.Add(type) && _typeLists.TryGetValue(type, out var list))
-                    {
-                        foreach (var entity in list) result.Add(entity);
-                    }
+                    action(entity);
                 }
             }
         }
@@ -133,49 +88,27 @@ public sealed class EcStore
     }
 
     /// <summary>
-    /// Gets all entities filtered by the types of the provided target instances.
+    /// Executes the provided action on every entity of the specified type.
     /// </summary>
-    public List<Entity> GetAll(params Entity[] filterTargets)
+    public void ForEach<T>(Action<T> action) where T : Entity
     {
-        if (filterTargets == null || filterTargets.Length == 0) return GetAll();
-        var types = new Type[filterTargets.Length];
-        for (int i = 0; i < filterTargets.Length; i++)
+        ArgumentNullException.ThrowIfNull(action);
+        _lock.EnterReadLock();
+        try
         {
-            if (filterTargets[i] != null) types[i] = filterTargets[i].GetType();
+            if (_typeLists.TryGetValue(typeof(T), out var list))
+            {
+                foreach (var entity in list)
+                {
+                    action((T)entity);
+                }
+            }
         }
-        return GetAll(types);
+        finally
+        {
+            _lock.ExitReadLock();
+        }
     }
-
-    /// <summary>
-    /// Gets all entities of the specified type.
-    /// </summary>
-    public List<Entity> GetAll<T1>() where T1 : Entity => GetAll(typeof(T1));
-
-    /// <summary>
-    /// Gets all entities of the specified types.
-    /// </summary>
-    public List<Entity> GetAll<T1, T2>() where T1 : Entity where T2 : Entity 
-        => GetAll(typeof(T1), typeof(T2));
-
-    /// <summary>
-    /// Gets all entities of the specified types.
-    /// </summary>
-    public List<Entity> GetAll<T1, T2, T3>() where T1 : Entity where T2 : Entity where T3 : Entity 
-        => GetAll(typeof(T1), typeof(T2), typeof(T3));
-
-    /// <summary>
-    /// Gets all entities of the specified types.
-    /// </summary>
-    public List<Entity> GetAll<T1, T2, T3, T4>() 
-        where T1 : Entity where T2 : Entity where T3 : Entity where T4 : Entity
-        => GetAll(typeof(T1), typeof(T2), typeof(T3), typeof(T4));
-
-    /// <summary>
-    /// Gets all entities of the specified types.
-    /// </summary>
-    public List<Entity> GetAll<T1, T2, T3, T4, T5>() 
-        where T1 : Entity where T2 : Entity where T3 : Entity where T4 : Entity where T5 : Entity
-        => GetAll(typeof(T1), typeof(T2), typeof(T3), typeof(T4), typeof(T5));
 
     /// <summary>
     /// Adds a parent entity and its children to the store, establishing relationships.

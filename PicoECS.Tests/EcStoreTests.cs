@@ -163,26 +163,6 @@ public class EcStoreTests
     }
 
     [Fact]
-    public void GetAll_Generic_ReturnsAllMatchingExactType()
-    {
-        var store = new EcStore();
-        store.Add(new TestEntity());
-        store.Add(new TestEntity());
-        store.Add(new OtherEntity());
-        Assert.Equal(2, store.GetAll<TestEntity>().Count);
-        Assert.Single(store.GetAll<OtherEntity>());
-    }
-
-    [Fact]
-    public void GetAll_Generic_DoesNotReturnDerivedTypes()
-    {
-        var store = new EcStore();
-        store.Add(new DerivedTestEntity());
-        Assert.Empty(store.GetAll<TestEntity>());
-        Assert.Single(store.GetAll<DerivedTestEntity>());
-    }
-
-    [Fact]
     public void GetAll_Unfiltered_ReturnsEverything()
     {
         var store = new EcStore();
@@ -192,45 +172,26 @@ public class EcStoreTests
     }
 
     [Fact]
-    public void GetAll_WithTypes_ReturnsFilteredUnique()
+    public void ForEach_ExecutesOnAllEntities()
     {
         var store = new EcStore();
         store.Add(new TestEntity());
         store.Add(new OtherEntity());
-        var results = store.GetAll(typeof(TestEntity), typeof(TestEntity)); // Duplicate type
-        Assert.Single(results);
-        Assert.IsType<TestEntity>(results[0]);
+        int count = 0;
+        store.ForEach(e => count++);
+        Assert.Equal(2, count);
     }
 
     [Fact]
-    public void GetAll_WithNullType_IgnoresNull()
+    public void ForEach_Generic_ExecutesOnMatchingType()
     {
         var store = new EcStore();
         store.Add(new TestEntity());
-        var results = store.GetAll(new Type[] { null!, typeof(TestEntity) });
-        Assert.Single(results);
-    }
-
-    [Fact]
-    public void GetAll_WithInstances_FiltersByInstanceType()
-    {
-        var store = new EcStore();
         store.Add(new TestEntity());
         store.Add(new OtherEntity());
-        var results = store.GetAll(new TestEntity());
-        Assert.Single(results);
-        Assert.IsType<TestEntity>(results[0]);
-    }
-
-    [Fact]
-    public void GetAll_GenericOverloads_WorkCorrectly()
-    {
-        var store = new EcStore();
-        store.Add(new TestEntity());
-        store.Add(new OtherEntity());
-        
-        Assert.Single(store.GetAll<TestEntity>());
-        Assert.Equal(2, store.GetAll<TestEntity, OtherEntity>().Count);
+        int count = 0;
+        store.ForEach<TestEntity>(e => count++);
+        Assert.Equal(2, count);
     }
 
     #endregion
@@ -447,7 +408,7 @@ public class EcStoreTests
         });
         var task2 = Task.Run(() => 
         {
-            for(int i=0; i<500; i++) store.GetAll();
+            for(int i=0; i<500; i++) store.ForEach(e => { });
         });
 
         await Task.WhenAll(task1, task2);
@@ -498,20 +459,6 @@ public class EcStoreTests
     }
 
     [Fact]
-    public void GetAll_Generic_2_to_5_Types()
-    {
-        var store = new EcStore();
-        store.Add(new TestEntity());
-        store.Add(new OtherEntity());
-        store.Add(new DerivedTestEntity());
-
-        Assert.Equal(2, store.GetAll<TestEntity, OtherEntity>().Count);
-        Assert.Equal(3, store.GetAll<TestEntity, OtherEntity, DerivedTestEntity>().Count);
-        Assert.Equal(3, store.GetAll<TestEntity, OtherEntity, DerivedTestEntity, TestEntity>().Count); // Dup
-        Assert.Equal(3, store.GetAll<TestEntity, OtherEntity, DerivedTestEntity, TestEntity, OtherEntity>().Count);
-    }
-
-    [Fact]
     public void Add_BatchChildren()
     {
         var store = new EcStore();
@@ -525,11 +472,13 @@ public class EcStoreTests
     }
 
     [Fact]
-    public void GetAll_Generic_ReturnsEmptyWhenNoneMatch()
+    public void ForEach_Generic_ExecutesZeroTimesWhenNoneMatch()
     {
         var store = new EcStore();
         store.Add(new OtherEntity());
-        Assert.Empty(store.GetAll<TestEntity>());
+        int count = 0;
+        store.ForEach<TestEntity>(e => count++);
+        Assert.Equal(0, count);
     }
 
     [Fact]

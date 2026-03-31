@@ -73,13 +73,6 @@ public class StoreBenchmarks
     }
 
     [Benchmark]
-    public void GetEntitiesByGenericType()
-    {
-        var result = _store.GetAll<BenchmarkEntity>();
-        int count = result.Count;
-    }
-
-    [Benchmark]
     public void TraverseDescendants()
     {
         var descendants = _store.GetDescendants(_root);
@@ -89,6 +82,24 @@ public class StoreBenchmarks
     public void GetAll()
     {
         var all = _store.GetAll();
+    }
+
+    [Benchmark]
+    public void GetFirst()
+    {
+        var first = _store.GetFirst<BenchmarkEntity>();
+    }
+
+    [Benchmark]
+    public void ForEach()
+    {
+        _store.ForEach(e => { });
+    }
+
+    [Benchmark]
+    public void ForEachGeneric()
+    {
+        _store.ForEach<BenchmarkEntity>(e => { });
     }
 
     [Benchmark]

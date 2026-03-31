@@ -1,4 +1,7 @@
 using Xunit;
+using System.Collections.Generic;
+using System.Threading.Tasks;
+using System;
 
 namespace PicoECS.Tests;
 
@@ -69,8 +72,9 @@ public class StoreApiTests
         var transform = new Transform { X = 5, Y = 5 };
         store.Add(player1, transform);
 
-        var allPlayers = store.GetAll<Player>();
-        Assert.Equal(2, allPlayers.Count);
+        int playerCount = 0;
+        store.ForEach<Player>(p => playerCount++);
+        Assert.Equal(2, playerCount);
 
         var firstTransform = store.GetFirst<Transform>();
         Assert.NotNull(firstTransform);
@@ -146,30 +150,12 @@ public class StoreApiTests
             var player = new Player { Name = $"Player {i}" };
             store.Add(player);
             
-            var players = store.GetAll<Player>();
-            Assert.NotEmpty(players);
+            bool found = false;
+            store.ForEach<Player>(p => found = true);
+            Assert.True(found);
         });
 
         Assert.Equal(100, store.Count);
-    }
-
-    [Fact]
-    public void Store_Can_Filter_All_Entities_By_Multiple_Type_Instances()
-    {
-        var store = new EcStore();
-        store.Add(new Player { Name = "Hero" });
-        store.Add(new Transform { X = 0, Y = 0 });
-        store.Add(new Weapon { Damage = 10 });
-        store.Add(new InventoryItem { ItemId = "Potion" });
-
-        var typesToFetch = new Entity[] { new Player(), new Transform(), new Weapon() };
-        var filteredEntities = store.GetAll(typesToFetch);
-        
-        Assert.Equal(3, filteredEntities.Count);
-        Assert.Contains(filteredEntities, e => e is Player);
-        Assert.Contains(filteredEntities, e => e is Transform);
-        Assert.Contains(filteredEntities, e => e is Weapon);
-        Assert.DoesNotContain(filteredEntities, e => e.GetType() == typeof(InventoryItem));
     }
 
     [Fact]
@@ -219,13 +205,15 @@ public class StoreApiTests
         store.Add(weapon);
         store.Add(basicItem);
 
-        // 1. GetAll<T> uses EXACT type matching for maximum performance (O(1) dictionary lookup).
-        // It will NOT return derived types.
-        var exactItems = store.GetAll<InventoryItem>();
-        Assert.Single(exactItems); // Only the "Apple", not the Weapon
+        // 1. ForEach<T> uses EXACT type matching for maximum performance (O(1) dictionary lookup).
+        // It will NOT iterate over derived types.
+        int itemCount = 0;
+        store.ForEach<InventoryItem>(i => itemCount++);
+        Assert.Equal(1, itemCount); // Only the "Apple", not the Weapon
         
-        var weapons = store.GetAll<Weapon>();
-        Assert.Single(weapons);
+        int weaponCount = 0;
+        store.ForEach<Weapon>(w => weaponCount++);
+        Assert.Equal(1, weaponCount);
 
         // 2. In contrast, relationship queries like GetChildren are polymorphic.
         var player = new Player();
@@ -249,32 +237,6 @@ public class StoreApiTests
         // An entity can only have one parent.
         // Attempting to add an existing child to a NEW parent throws an InvalidOperationException.
         Assert.Throws<InvalidOperationException>(() => store.Add(parent2, child));
-    }
-
-    [Fact]
-    public void Store_Supports_Generic_GetAll_Queries_Up_To_Five_Types()
-    {
-        var store = new EcStore();
-        store.Add(new Player { Name = "Hero" });
-        store.Add(new Transform { X = 0, Y = 0 });
-        store.Add(new Weapon { Damage = 10 });
-        store.Add(new InventoryItem { ItemId = "Potion" });
-
-        // Generic overloads for zero-allocation-boilerplate querying
-        var playersAndTransforms = store.GetAll<Player, Transform>();
-        Assert.Equal(2, playersAndTransforms.Count);
-
-        // 4-type query
-        var fourTypes = store.GetAll<Player, Transform, Weapon, InventoryItem>();
-        Assert.Equal(4, fourTypes.Count);
-
-        // 5-type query (reusing a type since we only have 4 defined here, but it verifies the overload works)
-        var fiveTypes = store.GetAll<Player, Transform, Weapon, InventoryItem, Player>();
-        Assert.Equal(4, fiveTypes.Count); // HashSet internally handles the duplicate type
-
-        // Type-based queries
-        var weaponsAndPlayers = store.GetAll(typeof(Weapon), typeof(Player));
-        Assert.Equal(2, weaponsAndPlayers.Count);
     }
 
     [Fact]
