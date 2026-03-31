@@ -4,6 +4,31 @@
     <TargetFramework>net8.0</TargetFramework>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
+    <GeneratePackageOnBuild>True</GeneratePackageOnBuild>
+    <Title>PicoEntityStore</Title>
+    <PackageReadmeFile>README.md</PackageReadmeFile>
+    <PackageId>PicoEntityStore</PackageId>
+    <Version>0.0.1</Version>
+    <PackageLicenseExpression>MIT</PackageLicenseExpression>
+    <Authors>Paul Q. Peters</Authors>
+    <Product>PicoEntityStore</Product>
+    <Description>
+      A lightweight, thread-safe, in-memory entity store for .NET with zero dependencies.
+    </Description>
+    <PackageProjectUrl>https://github.com/paulpeters144/PicoEntityStore</PackageProjectUrl>
+    <PackageTags>Entity; Store; Pico; PicoEntityStore; Repository; Cache</PackageTags>
+    <RepositoryUrl>https://github.com/paulpeters144/PicoEntityStore</RepositoryUrl>
   </PropertyGroup>
+
+  <ItemGroup>
+    <None Include="..\README.md">
+      <Pack>True</Pack>
+      <PackagePath>\</PackagePath>
+    </None>
+    <None Include="..\LICENSE">
+      <Pack>True</Pack>
+      <PackagePath>\</PackagePath>
+    </None>
+  </ItemGroup>
 
 </Project>

@@ -28,6 +28,12 @@ public sealed class PicoEntityStore
 }
 ```
 
+## 📦 Installation
+
+You can install the `PicoEntityStore` NuGet package via the .NET CLI:
+```bash
+dotnet add package PicoEntityStore
+```
 ---
 
 ## 🚀 2. Getting Started
