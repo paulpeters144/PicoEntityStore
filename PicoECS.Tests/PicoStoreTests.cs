@@ -123,7 +123,7 @@ public class PicoStoreTests
         var store = new PicoStore();
         var ent = new TestPicoEntity();
         store.Add(ent);
-        var fetched = store.GetById<TestPicoEntity>(ent.Id);
+        var fetched = store.Get<TestPicoEntity>(ent.Id);
         Assert.Same(ent, fetched);
     }
 
@@ -131,7 +131,7 @@ public class PicoStoreTests
     public void Get_NonExistentId_ReturnsNull()
     {
         var store = new PicoStore();
-        Assert.Null(store.GetById<TestPicoEntity>(999));
+        Assert.Null(store.Get<TestPicoEntity>(999));
     }
 
     [Fact]
@@ -140,35 +140,35 @@ public class PicoStoreTests
         var store = new PicoStore();
         var ent = new TestPicoEntity();
         store.Add(ent);
-        Assert.Null(store.GetById<OtherPicoEntity>(ent.Id));
+        Assert.Null(store.Get<OtherPicoEntity>(ent.Id));
     }
 
     [Fact]
-    public void GetFirst_Existing_ReturnsFirstPicoEntity()
+    public void First_Existing_ReturnsFirstPicoEntity()
     {
         var store = new PicoStore();
         var ent1 = new TestPicoEntity();
         var ent2 = new TestPicoEntity();
         store.Add(ent1);
         store.Add(ent2);
-        var first = store.GetFirst<TestPicoEntity>();
+        var first = store.First<TestPicoEntity>();
         Assert.True(first == ent1 || first == ent2);
     }
 
     [Fact]
-    public void GetFirst_NonExistent_ReturnsNull()
+    public void First_NonExistent_ReturnsNull()
     {
         var store = new PicoStore();
-        Assert.Null(store.GetFirst<TestPicoEntity>());
+        Assert.Null(store.First<TestPicoEntity>());
     }
 
     [Fact]
-    public void GetAll_Unfiltered_ReturnsEverything()
+    public void All_Unfiltered_ReturnsEverything()
     {
         var store = new PicoStore();
         store.Add(new TestPicoEntity());
         store.Add(new OtherPicoEntity());
-        Assert.Equal(2, store.GetAll().Count);
+        Assert.Equal(2, store.All().Count);
     }
 
     [Fact]
@@ -199,87 +199,61 @@ public class PicoStoreTests
     #region Hierarchy Navigation Tests
 
     [Fact]
-    public void GetParent_RootPicoEntity_ReturnsNull()
+    public void Parent_RootPicoEntity_ReturnsNull()
     {
         var store = new PicoStore();
         var ent = new TestPicoEntity();
         store.Add(ent);
-        Assert.Null(store.GetParent<PicoEntity>(ent));
+        Assert.Null(store.Parent(ent));
     }
 
     [Fact]
-    public void GetParent_ChildPicoEntity_ReturnsParent()
+    public void Parent_ChildPicoEntity_ReturnsParent()
     {
         var store = new PicoStore();
         var parent = new TestPicoEntity();
         var child = new TestPicoEntity();
         store.Add(parent, child);
-        Assert.Same(parent, store.GetParent<TestPicoEntity>(child));
+        Assert.Same(parent, store.Parent(child));
     }
 
     [Fact]
-    public void GetParent_WrongType_ReturnsNull()
+    public void Parent_NullPicoEntity_ThrowsArgumentNullException()
     {
         var store = new PicoStore();
-        var parent = new TestPicoEntity();
-        var child = new TestPicoEntity();
-        store.Add(parent, child);
-        Assert.Null(store.GetParent<OtherPicoEntity>(child));
+        Assert.Throws<ArgumentNullException>(() => store.Parent(null!));
     }
 
     [Fact]
-    public void GetParent_NullPicoEntity_ThrowsArgumentNullException()
-    {
-        var store = new PicoStore();
-        Assert.Throws<ArgumentNullException>(() => store.GetParent<PicoEntity>(null!));
-    }
-
-    [Fact]
-    public void GetChildren_LeafPicoEntity_ReturnsEmpty()
+    public void Children_LeafPicoEntity_ReturnsEmpty()
     {
         var store = new PicoStore();
         var ent = new TestPicoEntity();
         store.Add(ent);
-        Assert.Empty(store.GetChildren<PicoEntity>(ent));
+        Assert.Empty(store.Children(ent));
     }
 
     [Fact]
-    public void GetChildren_Polymorphic_ReturnsDerivedTypes()
+    public void Children_ReturnsDirectChildren()
     {
         var store = new PicoStore();
         var parent = new TestPicoEntity();
         var child = new DerivedTestPicoEntity();
         store.Add(parent, child);
-        var children = store.GetChildren<TestPicoEntity>(parent);
+        var children = store.Children(parent);
         Assert.Single(children);
-        Assert.IsType<DerivedTestPicoEntity>(children[0]);
+        Assert.Same(child, children[0]);
     }
 
     [Fact]
-    public void GetChildren_NullParent_ThrowsArgumentNullException()
+    public void Children_NullParent_ThrowsArgumentNullException()
     {
         var store = new PicoStore();
-        Assert.Throws<ArgumentNullException>(() => store.GetChildren<PicoEntity>(null!));
+        Assert.Throws<ArgumentNullException>(() => store.Children(null!));
     }
 
     [Fact]
-    public void GetChildCount_ReturnsCorrectValue()
-    {
-        var store = new PicoStore();
-        var parent = new TestPicoEntity();
-        store.Add(parent, new TestPicoEntity(), new TestPicoEntity());
-        Assert.Equal(2, store.GetChildCount(parent));
-    }
-
-    [Fact]
-    public void GetChildCount_NullParent_ThrowsArgumentNullException()
-    {
-        var store = new PicoStore();
-        Assert.Throws<ArgumentNullException>(() => store.GetChildCount(null!));
-    }
-
-    [Fact]
-    public void GetDescendants_DeepHierarchy_ReturnsAllRecursively()
+    public void Descendants_DeepHierarchy_ReturnsAllRecursively()
     {
         var store = new PicoStore();
         var root = new TestPicoEntity();
@@ -289,7 +263,7 @@ public class PicoStoreTests
         store.Add(root, c1, c2);
         store.Add(c1, g1);
 
-        var descendants = store.GetDescendants(root);
+        var descendants = store.Descendants(root);
         Assert.Equal(3, descendants.Count);
         Assert.Contains(c1, descendants);
         Assert.Contains(c2, descendants);
@@ -297,10 +271,10 @@ public class PicoStoreTests
     }
 
     [Fact]
-    public void GetDescendants_NullParent_ThrowsArgumentNullException()
+    public void Descendants_NullParent_ThrowsArgumentNullException()
     {
         var store = new PicoStore();
-        Assert.Throws<ArgumentNullException>(() => store.GetDescendants(null!));
+        Assert.Throws<ArgumentNullException>(() => store.Descendants(null!));
     }
 
     #endregion
@@ -315,7 +289,7 @@ public class PicoStoreTests
         store.Add(ent);
         store.Remove(ent);
         Assert.Equal(0, store.Count);
-        Assert.Null(store.GetById<TestPicoEntity>(ent.Id));
+        Assert.Null(store.Get<TestPicoEntity>(ent.Id));
     }
 
     [Fact]
@@ -327,7 +301,7 @@ public class PicoStoreTests
         store.Add(parent, child);
         store.Remove(parent);
         Assert.Equal(0, store.Count);
-        Assert.Null(store.GetById<TestPicoEntity>(child.Id));
+        Assert.Null(store.Get<TestPicoEntity>(child.Id));
     }
 
     [Fact]
@@ -357,10 +331,8 @@ public class PicoStoreTests
         
         store.Remove(child);
         
-        // This highlights that GetChildCount returns raw array length
-        Assert.Equal(1, store.GetChildCount(parent));
-        // But GetChildren filters correctly
-        Assert.Empty(store.GetChildren<PicoEntity>(parent));
+        // This highlights that Children returns 0 despite dangling ID
+        Assert.Empty(store.Children(parent));
     }
 
     [Fact]
@@ -371,7 +343,7 @@ public class PicoStoreTests
         store.Add(new OtherPicoEntity());
         store.Clear();
         Assert.Equal(0, store.Count);
-        Assert.Empty(store.GetAll());
+        Assert.Empty(store.All());
     }
 
     #endregion
@@ -453,9 +425,9 @@ public class PicoStoreTests
         store.Remove(middle);
 
         Assert.Equal(1, store.Count);
-        Assert.Same(root, store.GetById<TestPicoEntity>(root.Id));
-        Assert.Null(store.GetById<TestPicoEntity>(middle.Id));
-        Assert.Null(store.GetById<TestPicoEntity>(leaf.Id));
+        Assert.Same(root, store.Get<TestPicoEntity>(root.Id));
+        Assert.Null(store.Get<TestPicoEntity>(middle.Id));
+        Assert.Null(store.Get<TestPicoEntity>(leaf.Id));
     }
 
     [Fact]
@@ -468,7 +440,7 @@ public class PicoStoreTests
         store.Add(parent, children);
         
         Assert.Equal(11, store.Count);
-        Assert.Equal(10, store.GetChildCount(parent));
+        Assert.Equal(10, store.Children(parent).Count);
     }
 
     [Fact]
@@ -504,14 +476,14 @@ public class PicoStoreTests
         store.Add(parent, child);
         
         Assert.Equal(countBefore, store.Count);
-        Assert.Equal(1, store.GetChildCount(parent));
+        Assert.Equal(1, store.Children(parent).Count);
     }
 
     [Fact]
     public void Get_NullId_ReturnsNull()
     {
         var store = new PicoStore();
-        Assert.Null(store.GetById<PicoEntity>(0));
+        Assert.Null(store.Get<PicoEntity>(0));
     }
 
     #endregion

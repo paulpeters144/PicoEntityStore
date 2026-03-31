@@ -1,5 +1,6 @@
 using BenchmarkDotNet.Attributes;
 using PicoECS;
+using System.Collections.Generic;
 
 namespace PicoECS.Benchmarks;
 
@@ -68,32 +69,32 @@ public class StoreBenchmarks
     {
         for (int i = 0; i < PicoEntityCount; i++)
         {
-            _store.GetById<BenchmarkPicoEntity>(_ids[i]);
+            _store.Get<BenchmarkPicoEntity>(_ids[i]);
         }
     }
 
     [Benchmark]
     public void TraverseDescendants()
     {
-        var descendants = _store.GetDescendants(_root);
+        var descendants = _store.Descendants(_root);
     }
 
     [Benchmark]
-    public void GetAll()
+    public void All()
     {
-        var all = _store.GetAll();
+        var all = _store.All();
     }
 
     [Benchmark]
-    public void GetAllGeneric()
+    public void AllGeneric()
     {
-        var all = _store.GetAll<BenchmarkPicoEntity>();
+        var all = _store.All<BenchmarkPicoEntity>();
     }
 
     [Benchmark]
-    public void GetFirst()
+    public void First()
     {
-        var first = _store.GetFirst<BenchmarkPicoEntity>();
+        var first = _store.First<BenchmarkPicoEntity>();
     }
 
     [Benchmark]

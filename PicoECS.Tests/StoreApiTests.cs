@@ -1,6 +1,7 @@
 using Xunit;
 using System.Collections.Generic;
 using System.Threading.Tasks;
+using System.Linq;
 using System;
 
 namespace PicoECS.Tests;
@@ -52,8 +53,8 @@ public class StoreApiTests
 
         store.Add(player, transform, sword);
 
-        var children = store.GetChildren<PicoEntity>(player);
-        var swordParent = store.GetParent<Player>(sword);
+        var children = store.Children(player);
+        var swordParent = store.Parent(sword);
 
         Assert.Equal(2, children.Count);
         Assert.Contains(transform, children);
@@ -76,13 +77,13 @@ public class StoreApiTests
         store.ForEach<Player>(p => playerCount++);
         Assert.Equal(2, playerCount);
 
-        var firstTransform = store.GetFirst<Transform>();
+        var firstTransform = store.First<Transform>();
         Assert.NotNull(firstTransform);
 
-        var specificPlayer = store.GetById<Player>(player2.Id);
+        var specificPlayer = store.Get<Player>(player2.Id);
         Assert.Same(player2, specificPlayer);
 
-        var descendants = store.GetDescendants(player1);
+        var descendants = store.Descendants(player1);
         Assert.Single(descendants); 
     }
 
@@ -102,9 +103,9 @@ public class StoreApiTests
         store.Remove(player);
 
         Assert.Equal(0, store.Count);
-        Assert.Null(store.GetById<Player>(player.Id));
-        Assert.Null(store.GetById<Transform>(transform.Id));
-        Assert.Null(store.GetById<InventoryItem>(item.Id));
+        Assert.Null(store.Get<Player>(player.Id));
+        Assert.Null(store.Get<Transform>(transform.Id));
+        Assert.Null(store.Get<InventoryItem>(item.Id));
     }
 
     [Fact]
@@ -117,12 +118,12 @@ public class StoreApiTests
 
         store.Add(player, sword, shield);
 
-        Assert.Equal(2, store.GetChildCount(player));
+        Assert.Equal(2, store.Children(player).Count);
 
-        var allItems = store.GetChildren<InventoryItem>(player);
+        var allItems = store.Children(player);
         Assert.Equal(2, allItems.Count);
 
-        var parentOfSword = store.GetParent<Player>(sword);
+        var parentOfSword = store.Parent(sword);
         Assert.Same(player, parentOfSword);
     }
 
@@ -136,7 +137,7 @@ public class StoreApiTests
 
         Assert.Equal(3, store.Count);
 
-        var allEntities = store.GetAll();
+        var allEntities = store.All();
         Assert.Equal(3, allEntities.Count);
     }
 
@@ -147,8 +148,8 @@ public class StoreApiTests
         store.Add(new Player { Name = "Hero" });
         store.Add(new Transform { X = 10 });
 
-        // Example of using GetAll with typeof(Class) for runtime type queries
-        var players = store.GetAll(typeof(Player));
+        // Example of querying by type at runtime after GetAll(Type[]) removal
+        var players = store.All().Where(e => e.GetType() == typeof(Player)).ToList();
         Assert.Single(players);
         Assert.IsType<Player>(players[0]);
     }
@@ -183,7 +184,7 @@ public class StoreApiTests
         store.Clear();
 
         Assert.Equal(0, store.Count);
-        var allEntities = store.GetAll();
+        var allEntities = store.All();
         Assert.Empty(allEntities);
     }
 
@@ -198,11 +199,11 @@ public class StoreApiTests
         store.Add(grandparent, parent);
         store.Add(parent, child);
 
-        var directChildren = store.GetChildren(grandparent);
+        var directChildren = store.Children(grandparent);
         Assert.Single(directChildren);
         Assert.Contains(parent, directChildren);
 
-        var allDescendants = store.GetDescendants(grandparent);
+        var allDescendants = store.Descendants(grandparent);
         Assert.Equal(2, allDescendants.Count);
         Assert.Contains(parent, allDescendants);
         Assert.Contains(child, allDescendants);
@@ -228,12 +229,12 @@ public class StoreApiTests
         store.ForEach<Weapon>(w => weaponCount++);
         Assert.Equal(1, weaponCount);
 
-        // 2. In contrast, relationship queries like GetChildren are polymorphic.
+        // 2. In contrast, relationship queries like Children are polymorphic.
         var player = new Player();
         store.Add(player, weapon, basicItem);
 
-        // Querying children by the base class (InventoryItem) returns BOTH the basic item and the derived Weapon.
-        var childItems = store.GetChildren<InventoryItem>(player);
+        // Querying children returns BOTH the basic item and the derived Weapon.
+        var childItems = store.Children(player);
         Assert.Equal(2, childItems.Count);
     }
 
@@ -271,7 +272,7 @@ public class StoreApiTests
 
         // Only player3 remains
         Assert.Equal(1, store.Count);
-        Assert.NotNull(store.GetById<Player>(player3.Id));
+        Assert.NotNull(store.Get<Player>(player3.Id));
     }
 
     [Fact]
@@ -289,11 +290,11 @@ public class StoreApiTests
         store.Add(player, sword);    // Sword is a child of Player
 
         // 2. Query: Get the player back from the store (simulating a search)
-        var hero = store.GetFirst<Player>();
+        var hero = store.First<Player>();
         Assert.NotNull(hero);
 
         // 3. Query Children: Get all direct children as the base 'PicoEntity' type
-        var children = store.GetChildren<PicoEntity>(hero);
+        var children = store.Children(hero);
         Assert.Equal(2, children.Count);
 
         // 4. Identify Types: Use C# pattern matching (is/as) to figure out what each child is

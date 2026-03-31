@@ -2,6 +2,35 @@
 
 PicoECS is a fast, thread-safe, and simple way to store and find entities in your .NET applications. It is designed to handle hierarchical data—where objects are naturally nested, like items in an inventory, UI elements in a tree, or objects in a game scene.
 
+## PicoStore Interface
+
+```csharp
+public sealed class PicoStore
+{
+    public int Count { get; }
+    
+    // Lifecycle & Management
+    public void Add(PicoEntity parent, params PicoEntity[] children);
+    public void Remove(params PicoEntity[] entities);
+    public void Clear();
+
+    // Retrieval
+    public T? Get<T>(uint id) where T : PicoEntity;
+    public T? First<T>() where T : PicoEntity;
+    public List<PicoEntity> All();
+    public List<T> All<T>() where T : PicoEntity;
+
+    // Iteration
+    public void ForEach(Action<PicoEntity> action);
+    public void ForEach<T>(Action<T> action) where T : PicoEntity;
+
+    // Hierarchy & Navigation
+    public PicoEntity? Parent(PicoEntity entity);
+    public List<PicoEntity> Children(PicoEntity parent);
+    public List<PicoEntity> Descendants(PicoEntity parent);
+}
+```
+
 ## Why PicoECS?
 
 - **Hierarchy-First:** Easily link entities as parents and children. Removing a parent automatically cleans up all its descendants.
@@ -76,9 +105,9 @@ graph TD
 ```
 #### Querying the Hierarchy
 ```csharp
-var player = store.GetFirst<Player>();
-var inventory = store.GetChildren<Inventory>(player).First();
-var sword = store.GetChildren<Sword>(inventory).First();
+var player = store.First<Player>();
+var inventory = store.Children(player).OfType<Inventory>().First();
+var sword = store.Children(inventory).OfType<Sword>().First();
 
 // Removing an entity recursively removes all of the entity's descendants
 store.Remove(player); 
@@ -106,32 +135,26 @@ store.ForEach(e => Console.WriteLine($"PicoEntity ID: {e.Id}"));
 ### Get By ID
 Retrieve a specific entity in O(1) time:
 ```csharp
-var player = store.GetById<Player>(player.Id);
+var player = store.Get<Player>(player.Id);
 ```
 
 ### Generic Type Lookup
 Get every entity of a specific type. Like `ForEach<T>`, this uses **exact type matching**.
 ```csharp
-var allPlayers = store.GetAll<Player>();
-```
-
-### Multiple Types
-If you need entities of several different types at once, you can pass them as parameters:
-```csharp
-var results = store.GetAll(typeof(Player), typeof(Sword));
+var allPlayers = store.All<Player>();
 ```
 
 ### Children (Polymorphic)
-Retrieve the direct children of an entity. Unlike `GetAll<T>`, relationship queries are **polymorphic** and will include derived types.
+Retrieve the direct children of an entity. Unlike `All<T>`, relationship queries are **polymorphic** and will include derived types.
 ```csharp
 // Will find both Sword and Shield items if they inherit from Item
-var items = store.GetChildren<Item>(inventory);
+var items = store.Children(inventory);
 ```
 
 ### Descendants
 Get every entity nested under a parent, recursively:
 ```csharp
-var allDescendants = store.GetDescendants(player);
+var allDescendants = store.Descendants(player);
 ```
 
 ## More Examples
