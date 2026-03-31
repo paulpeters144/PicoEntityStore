@@ -14,18 +14,32 @@ namespace PicoECS;
 /// </summary>
 public sealed class PicoStore
 {
-    private readonly Dictionary<Type, List<Entity>> _typeLists = [];
-    private readonly Dictionary<uint, Entity> _idIndex = [];
+    private readonly Dictionary<Type, List<PicoEntity>> _typeLists = [];
+    private readonly Dictionary<uint, PicoEntity> _idIndex = [];
     private readonly ReaderWriterLockSlim _lock = new();
 
-    public int Count => getCount();
+    public int Count 
+    { 
+        get 
+        {
+            _lock.EnterReadLock();
+            try
+            {
+                return _idIndex.Count;
+            }
+            finally
+            {
+                _lock.ExitReadLock();
+            }
+        }
+    }
 
     /// <summary>
     /// Retrieves all entities in the store.
     /// </summary>
-    public List<Entity> GetAll()
+    public List<PicoEntity> GetAll()
     {
-        var result = new List<Entity>(Count);
+        var result = new List<PicoEntity>(Count);
         GetAll(result);
         return result;
     }
@@ -33,7 +47,7 @@ public sealed class PicoStore
     /// <summary>
     /// Retrieves all entities of the specified type.
     /// </summary>
-    public List<T> GetAll<T>() where T : Entity
+    public List<T> GetAll<T>() where T : PicoEntity
     {
         _lock.EnterReadLock();
         try
@@ -58,9 +72,9 @@ public sealed class PicoStore
     /// <summary>
     /// Retrieves all entities matching one or more of the specified types.
     /// </summary>
-    public List<Entity> GetAll(params Type[] types)
+    public List<PicoEntity> GetAll(params Type[] types)
     {
-        var result = new List<Entity>();
+        var result = new List<PicoEntity>();
         if (types == null || types.Length == 0) return result;
         
         var uniqueTypes = types.Where(t => t != null).Distinct().ToHashSet();
@@ -83,7 +97,7 @@ public sealed class PicoStore
         return result;
     }
 
-    internal void ForEachInternal(Type[] types, Action<Entity> action)
+    internal void ForEachInternal(Type[] types, Action<PicoEntity> action)
     {
         ArgumentNullException.ThrowIfNull(action);
         if (types == null || types.Length == 0) return;
@@ -120,13 +134,13 @@ public sealed class PicoStore
     /// <summary>
     /// Fills the provided collection with all entities in the store.
     /// </summary>
-    public void GetAll(ICollection<Entity> result)
+    public void GetAll(ICollection<PicoEntity> result)
     {
         ArgumentNullException.ThrowIfNull(result);
         _lock.EnterReadLock();
         try
         {
-            if (result is List<Entity> listResult)
+            if (result is List<PicoEntity> listResult)
             {
                 foreach (var list in _typeLists.Values)
                 {
@@ -153,7 +167,7 @@ public sealed class PicoStore
     /// <summary>
     /// Executes the provided action on every entity in the store.
     /// </summary>
-    public void ForEach(Action<Entity> action)
+    public void ForEach(Action<PicoEntity> action)
     {
         ArgumentNullException.ThrowIfNull(action);
         _lock.EnterReadLock();
@@ -176,7 +190,7 @@ public sealed class PicoStore
     /// <summary>
     /// Executes the provided action on every entity of the specified type.
     /// </summary>
-    public void ForEach<T>(Action<T> action) where T : Entity
+    public void ForEach<T>(Action<T> action) where T : PicoEntity
     {
         ArgumentNullException.ThrowIfNull(action);
         _lock.EnterReadLock();
@@ -201,14 +215,14 @@ public sealed class PicoStore
     /// </summary>
     /// <param name="parent">The parent entity.</param>
     /// <param name="children">Optional child entities.</param>
-    public void Add(Entity parent, params Entity[] children)
+    public void Add(PicoEntity parent, params PicoEntity[] children)
     {
         ArgumentNullException.ThrowIfNull(parent);
 
         _lock.EnterWriteLock();
         try
         {
-            ensureEntityIndexed(parent);
+            ensurePicoEntityIndexed(parent);
 
             if (children != null && children.Length > 0)
             {
@@ -252,7 +266,7 @@ public sealed class PicoStore
                     }
 
                     child.ParentId = parent.Id;
-                    ensureEntityIndexed(child);
+                    ensurePicoEntityIndexed(child);
                 }
 
                 if (addedCount > 0)
@@ -274,7 +288,7 @@ public sealed class PicoStore
         }
     }
 
-    private void validateChildRelationship(Entity child, uint newParentId)
+    private void validateChildRelationship(PicoEntity child, uint newParentId)
     {
         if (child.ParentId != 0 && child.ParentId != newParentId)
         {
@@ -283,7 +297,7 @@ public sealed class PicoStore
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    private void ensureEntityIndexed(Entity entity)
+    private void ensurePicoEntityIndexed(PicoEntity entity)
     {
         var id = entity.Id;
         // TryAdd returns true if the key was not found and was added.
@@ -305,7 +319,7 @@ public sealed class PicoStore
     /// <summary>
     /// Retrieves an entity by its unique ID.
     /// </summary>
-    public T? GetById<T>(uint id) where T : Entity
+    public T? GetById<T>(uint id) where T : PicoEntity
     {
         _lock.EnterReadLock();
         try
@@ -321,7 +335,7 @@ public sealed class PicoStore
     /// <summary>
     /// Retrieves the first entity of a specific type.
     /// </summary>
-    public T? GetFirst<T>() where T : Entity
+    public T? GetFirst<T>() where T : PicoEntity
     {
         _lock.EnterReadLock();
         try
@@ -339,7 +353,7 @@ public sealed class PicoStore
     /// <summary>
     /// Gets the number of children for a given parent entity.
     /// </summary>
-    public int GetChildCount(Entity parent)
+    public int GetChildCount(PicoEntity parent)
     {
         ArgumentNullException.ThrowIfNull(parent);
         _lock.EnterReadLock();
@@ -356,7 +370,7 @@ public sealed class PicoStore
     /// <summary>
     /// Removes entities and all their descendants from the store.
     /// </summary>
-    public void Remove(params Entity[] entities)
+    public void Remove(params PicoEntity[] entities)
     {
         if (entities == null || entities.Length == 0) return;
 
@@ -364,7 +378,7 @@ public sealed class PicoStore
         try
         {
             var toRemove = new HashSet<uint>();
-            var queue = new Queue<Entity>(entities.Length);
+            var queue = new Queue<PicoEntity>(entities.Length);
 
             foreach (var e in entities)
             {
@@ -395,9 +409,9 @@ public sealed class PicoStore
                         int lastIndex = list.Count - 1;
                         if (index < lastIndex)
                         {
-                            var lastEntity = list[lastIndex];
-                            list[index] = lastEntity;
-                            lastEntity.TypeListIndex = index;
+                            var lastPicoEntity = list[lastIndex];
+                            list[index] = lastPicoEntity;
+                            lastPicoEntity.TypeListIndex = index;
                         }
                         list.RemoveAt(lastIndex);
                         entity.TypeListIndex = -1;
@@ -430,23 +444,10 @@ public sealed class PicoStore
         }
     }
 
-    private int getCount()
-    {
-        _lock.EnterReadLock();
-        try
-        {
-            return _idIndex.Count;
-        }
-        finally
-        {
-            _lock.ExitReadLock();
-        }
-    }
-
     /// <summary>
     /// Gets the parent of an entity.
     /// </summary>
-    public T? GetParent<T>(Entity entity) where T : Entity
+    public T? GetParent<T>(PicoEntity entity) where T : PicoEntity
     {
         ArgumentNullException.ThrowIfNull(entity);
         
@@ -467,7 +468,7 @@ public sealed class PicoStore
     /// <summary>
     /// Gets direct children of an entity.
     /// </summary>
-    public List<Entity> GetChildren(Entity parent)
+    public List<PicoEntity> GetChildren(PicoEntity parent)
     {
         ArgumentNullException.ThrowIfNull(parent);
 
@@ -475,10 +476,10 @@ public sealed class PicoStore
         try
         {
             var childIds = parent.ChildIds;
-            var result = new List<Entity>(childIds.Length);
+            var result = new List<PicoEntity>(childIds.Length);
             foreach (var childId in childIds)
             {
-                if (_idIndex.TryGetValue(childId, out var child) && child is Entity typedChild)
+                if (_idIndex.TryGetValue(childId, out var child) && child is PicoEntity typedChild)
                 {
                     result.Add(typedChild);
                 }
@@ -494,7 +495,7 @@ public sealed class PicoStore
     /// <summary>
     /// Gets direct children of an entity.
     /// </summary>
-    public List<T> GetChildren<T>(Entity parent) where T : Entity
+    public List<T> GetChildren<T>(PicoEntity parent) where T : PicoEntity
     {
         ArgumentNullException.ThrowIfNull(parent);
 
@@ -521,14 +522,14 @@ public sealed class PicoStore
     /// <summary>
     /// Gets all descendants of an entity recursively.
     /// </summary>
-    public List<Entity> GetDescendants(Entity parent)
+    public List<PicoEntity> GetDescendants(PicoEntity parent)
     {
         ArgumentNullException.ThrowIfNull(parent);
 
         _lock.EnterReadLock();
         try
         {
-            var result = new List<Entity>();
+            var result = new List<PicoEntity>();
             var childIds = parent.ChildIds;
             
             // Pre-allocate stack to avoid resizing

@@ -8,19 +8,19 @@ namespace PicoECS.Tests;
 public class StoreApiTests
 {
     // Example entity classes to be used in API tests
-    public class Player : Entity
+    public class Player : PicoEntity
     {
         public string Name { get; set; } = string.Empty;
         public int Health { get; set; } = 100;
     }
 
-    public class Transform : Entity
+    public class Transform : PicoEntity
     {
         public float X { get; set; }
         public float Y { get; set; }
     }
 
-    public class InventoryItem : Entity
+    public class InventoryItem : PicoEntity
     {
         public string ItemId { get; set; } = string.Empty;
     }
@@ -52,7 +52,7 @@ public class StoreApiTests
 
         store.Add(player, transform, sword);
 
-        var children = store.GetChildren<Entity>(player);
+        var children = store.GetChildren<PicoEntity>(player);
         var swordParent = store.GetParent<Player>(sword);
 
         Assert.Equal(2, children.Count);
@@ -292,8 +292,8 @@ public class StoreApiTests
         var hero = store.GetFirst<Player>();
         Assert.NotNull(hero);
 
-        // 3. Query Children: Get all direct children as the base 'Entity' type
-        var children = store.GetChildren<Entity>(hero);
+        // 3. Query Children: Get all direct children as the base 'PicoEntity' type
+        var children = store.GetChildren<PicoEntity>(hero);
         Assert.Equal(2, children.Count);
 
         // 4. Identify Types: Use C# pattern matching (is/as) to figure out what each child is

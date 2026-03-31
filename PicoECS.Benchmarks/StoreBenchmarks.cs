@@ -3,39 +3,39 @@ using PicoECS;
 
 namespace PicoECS.Benchmarks;
 
-public class BenchmarkEntity : Entity { }
-public class OtherBenchmarkEntity : Entity { }
+public class BenchmarkPicoEntity : PicoEntity { }
+public class OtherBenchmarkPicoEntity : PicoEntity { }
 
 [MemoryDiagnoser]
 public class StoreBenchmarks
 {
     private PicoStore _store = null!;
     private uint[] _ids = null!;
-    private BenchmarkEntity _root = null!;
-    private List<Entity> _toRemove = null!;
+    private BenchmarkPicoEntity _root = null!;
+    private List<PicoEntity> _toRemove = null!;
 
     [Params(1000, 10000)]
-    public int EntityCount;
+    public int PicoEntityCount;
 
     [GlobalSetup]
     public void Setup()
     {
         _store = new PicoStore();
-        _ids = new uint[EntityCount];
+        _ids = new uint[PicoEntityCount];
         
-        for (int i = 0; i < EntityCount; i++)
+        for (int i = 0; i < PicoEntityCount; i++)
         {
-            Entity ent = (i % 2 == 0) ? new BenchmarkEntity() : new OtherBenchmarkEntity();
+            PicoEntity ent = (i % 2 == 0) ? new BenchmarkPicoEntity() : new OtherBenchmarkPicoEntity();
             _store.Add(ent);
             _ids[i] = ent.Id;
         }
 
-        _root = new BenchmarkEntity();
+        _root = new BenchmarkPicoEntity();
         _store.Add(_root);
         var current = _root;
         for (int i = 0; i < 100; i++)
         {
-            var next = new BenchmarkEntity();
+            var next = new BenchmarkPicoEntity();
             _store.Add(current, next);
             current = next;
         }
@@ -47,7 +47,7 @@ public class StoreBenchmarks
         _toRemove = [];
         for (int i = 0; i < 100; i++)
         {
-            var ent = new BenchmarkEntity();
+            var ent = new BenchmarkPicoEntity();
             _store.Add(ent);
             _toRemove.Add(ent);
         }
@@ -57,18 +57,18 @@ public class StoreBenchmarks
     public void AddEntities()
     {
         var store = new PicoStore();
-        for (int i = 0; i < EntityCount; i++)
+        for (int i = 0; i < PicoEntityCount; i++)
         {
-            store.Add(new BenchmarkEntity());
+            store.Add(new BenchmarkPicoEntity());
         }
     }
 
     [Benchmark]
-    public void GetEntityById()
+    public void GetPicoEntityById()
     {
-        for (int i = 0; i < EntityCount; i++)
+        for (int i = 0; i < PicoEntityCount; i++)
         {
-            _store.GetById<BenchmarkEntity>(_ids[i]);
+            _store.GetById<BenchmarkPicoEntity>(_ids[i]);
         }
     }
 
@@ -87,13 +87,13 @@ public class StoreBenchmarks
     [Benchmark]
     public void GetAllGeneric()
     {
-        var all = _store.GetAll<BenchmarkEntity>();
+        var all = _store.GetAll<BenchmarkPicoEntity>();
     }
 
     [Benchmark]
     public void GetFirst()
     {
-        var first = _store.GetFirst<BenchmarkEntity>();
+        var first = _store.GetFirst<BenchmarkPicoEntity>();
     }
 
     [Benchmark]
@@ -105,7 +105,7 @@ public class StoreBenchmarks
     [Benchmark]
     public void ForEachGeneric()
     {
-        _store.ForEach<BenchmarkEntity>(e => { });
+        _store.ForEach<BenchmarkPicoEntity>(e => { });
     }
 
     [Benchmark]

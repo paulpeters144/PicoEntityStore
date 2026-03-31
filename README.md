@@ -7,20 +7,20 @@ PicoECS is a fast, thread-safe, and simple way to store and find entities in you
 - **Hierarchy-First:** Easily link entities as parents and children. Removing a parent automatically cleans up all its descendants.
 - **Thread-Safe:** Built-in support for multiple threads reading and writing at the same time using `ReaderWriterLockSlim`.
 - **Fast:** Find entities by their unique ID in O(1) time or query all entities of a specific type instantly.
-- **Simple API:** No complex setup. Just inherit from `Entity` and start using the `PicoStore`.
+- **Simple API:** No complex setup. Just inherit from `PicoEntity` and start using the `PicoStore`.
 
 ## Getting Started
 
 ### 1. Define Your Entities
 
-Entities are just classes that inherit from `Entity`.
+Entities are just classes that inherit from `PicoEntity`.
 
 ```csharp
-public class Player : Entity { public string Name { get; set; } = "Hero"; }
-public class Position : Entity { public float X, Y; }
-public class Inventory : Entity { }
-public class Sword : Entity { }
-public class Shield : Entity { }
+public class Player : PicoEntity { public string Name { get; set; } = "Hero"; }
+public class Position : PicoEntity { public float X, Y; }
+public class Inventory : PicoEntity { }
+public class Sword : PicoEntity { }
+public class Shield : PicoEntity { }
 ```
 
 ### 2. Basic Usage
@@ -98,7 +98,7 @@ store.ForEach<Position>(p => {
 });
 
 // Or run it on every single entity in the store
-store.ForEach(e => Console.WriteLine($"Entity ID: {e.Id}"));
+store.ForEach(e => Console.WriteLine($"PicoEntity ID: {e.Id}"));
 ```
 
 ## Querying
