@@ -29,7 +29,7 @@ public class StoreApiTests
     
 
     [Fact]
-    public void HowTo_InitializeStore_And_AddEntities()
+    public void Store_Can_Initialize_And_Add_Entities()
     {
         var store = new EcStore();
         var player = new Player { Name = "Hero" };
@@ -40,7 +40,7 @@ public class StoreApiTests
     }
 
     [Fact]
-    public void HowTo_Create_And_Manage_Hierarchies()
+    public void Store_Can_Establish_And_Retrieve_Parent_Child_Hierarchies()
     {
         var store = new EcStore();
         var player = new Player { Name = "Hero" };
@@ -58,7 +58,7 @@ public class StoreApiTests
     }
 
     [Fact]
-    public void HowTo_Query_Entities()
+    public void Store_Can_Query_Entities_By_Id_Type_And_First_Match()
     {
         var store = new EcStore();
         var player1 = new Player { Name = "Player 1" };
@@ -83,7 +83,7 @@ public class StoreApiTests
     }
 
     [Fact]
-    public void HowTo_Remove_Entities()
+    public void Store_Can_Remove_Entities_Recursively_By_Hierarchy()
     {
         var store = new EcStore();
         var player = new Player();
@@ -104,7 +104,7 @@ public class StoreApiTests
     }
 
     [Fact]
-    public void HowTo_Query_Parent_And_Children_Relationships()
+    public void Store_Can_Query_Direct_Parent_And_Child_Relationships_Polymorphically()
     {
         var store = new EcStore();
         var player = new Player { Name = "Hero" };
@@ -123,7 +123,7 @@ public class StoreApiTests
     }
 
     [Fact]
-    public void HowTo_Get_All_Entities()
+    public void Store_Can_Retrieve_All_Entities_Unfiltered()
     {
         var store = new EcStore();
         store.Add(new Player());
@@ -137,7 +137,7 @@ public class StoreApiTests
     }
 
     [Fact]
-    public void HowTo_Safely_Use_Store_Concurrently()
+    public void Store_Is_ThreadSafe_During_Concurrent_Adds_And_Queries()
     {
         var store = new EcStore();
         
@@ -154,7 +154,7 @@ public class StoreApiTests
     }
 
     [Fact]
-    public void HowTo_GetAll_FilteringByMultipleTypes()
+    public void Store_Can_Filter_All_Entities_By_Multiple_Type_Instances()
     {
         var store = new EcStore();
         store.Add(new Player { Name = "Hero" });
@@ -173,7 +173,7 @@ public class StoreApiTests
     }
 
     [Fact]
-    public void HowTo_Clear_Store()
+    public void Store_Can_Clear_All_Indexed_Entities()
     {
         var store = new EcStore();
         store.Add(new Player());
@@ -189,7 +189,7 @@ public class StoreApiTests
     }
 
     [Fact]
-    public void HowTo_Get_Descendants_Recursively()
+    public void Store_Can_Retrieve_All_Descendants_Recursively()
     {
         var store = new EcStore();
         var grandparent = new Player { Name = "Grandparent" };
@@ -210,7 +210,7 @@ public class StoreApiTests
     }
 
     [Fact]
-    public void HowTo_Understand_ExactType_Vs_Polymorphism()
+    public void Store_Differentiates_Between_Exact_Type_Queries_And_Polymorphic_Relationships()
     {
         var store = new EcStore();
         var weapon = new Weapon { Damage = 50 };
@@ -237,7 +237,7 @@ public class StoreApiTests
     }
 
     [Fact]
-    public void HowTo_Handle_Invalid_Relationships()
+    public void Store_Throws_When_Adding_Child_To_A_Second_Parent()
     {
         var store = new EcStore();
         var parent1 = new Player { Name = "Parent 1" };
@@ -252,7 +252,33 @@ public class StoreApiTests
     }
 
     [Fact]
-    public void HowTo_Remove_Multiple_Entities_At_Once()
+    public void Store_Supports_Generic_GetAll_Queries_Up_To_Five_Types()
+    {
+        var store = new EcStore();
+        store.Add(new Player { Name = "Hero" });
+        store.Add(new Transform { X = 0, Y = 0 });
+        store.Add(new Weapon { Damage = 10 });
+        store.Add(new InventoryItem { ItemId = "Potion" });
+
+        // Generic overloads for zero-allocation-boilerplate querying
+        var playersAndTransforms = store.GetAll<Player, Transform>();
+        Assert.Equal(2, playersAndTransforms.Count);
+
+        // 4-type query
+        var fourTypes = store.GetAll<Player, Transform, Weapon, InventoryItem>();
+        Assert.Equal(4, fourTypes.Count);
+
+        // 5-type query (reusing a type since we only have 4 defined here, but it verifies the overload works)
+        var fiveTypes = store.GetAll<Player, Transform, Weapon, InventoryItem, Player>();
+        Assert.Equal(4, fiveTypes.Count); // HashSet internally handles the duplicate type
+
+        // Type-based queries
+        var weaponsAndPlayers = store.GetAll(typeof(Weapon), typeof(Player));
+        Assert.Equal(2, weaponsAndPlayers.Count);
+    }
+
+    [Fact]
+    public void Store_Can_Batch_Remove_Multiple_Root_Entities()
     {
         var store = new EcStore();
         var player1 = new Player();

@@ -17,6 +17,113 @@ public sealed class EcStore
     public int Count => getCount();
 
     /// <summary>
+    /// Retrieves all entities in the store.
+    /// </summary>
+    public List<Entity> GetAll()
+    {
+        _lock.EnterReadLock();
+        try
+        {
+            var result = new List<Entity>(_idIndex.Count);
+            foreach (var list in _typeLists.Values)
+            {
+                result.AddRange(list);
+            }
+            return result;
+        }
+        finally
+        {
+            _lock.ExitReadLock();
+        }
+    }
+
+    /// <summary>
+    /// Gets all entities filtered by type.
+    /// </summary>
+    public List<Entity> GetAll(params Type[] types)
+    {
+        if (types.Length == 0) return GetAll();
+
+        _lock.EnterReadLock();
+        try
+        {
+            var capacity = 0;
+            var processedTypes = new HashSet<Type>();
+
+            foreach (var type in types)
+            {
+                if (type is null) continue;
+                if (processedTypes.Add(type) && _typeLists.TryGetValue(type, out var list))
+                {
+                    capacity += list.Count;
+                }
+            }
+
+            var filteredResult = new List<Entity>(capacity);
+            processedTypes.Clear();
+
+            foreach (var type in types)
+            {
+                if (type is null) continue;
+                if (processedTypes.Add(type) && _typeLists.TryGetValue(type, out var list))
+                {
+                    filteredResult.AddRange(list);
+                }
+            }
+            return filteredResult;
+        }
+        finally
+        {
+            _lock.ExitReadLock();
+        }
+    }
+
+    /// <summary>
+    /// Gets all entities filtered by the types of the provided target instances.
+    /// </summary>
+    public List<Entity> GetAll(params Entity[] filterTargets)
+    {
+        if (filterTargets.Length == 0) return GetAll();
+        var types = new Type[filterTargets.Length];
+        for (int i = 0; i < filterTargets.Length; i++)
+        {
+            if (filterTargets[i] != null) types[i] = filterTargets[i].GetType();
+        }
+        return GetAll(types);
+    }
+
+    /// <summary>
+    /// Gets all entities of the specified type.
+    /// </summary>
+    public List<Entity> GetAll<T1>() where T1 : Entity => GetAll(typeof(T1));
+
+    /// <summary>
+    /// Gets all entities of the specified types.
+    /// </summary>
+    public List<Entity> GetAll<T1, T2>() where T1 : Entity where T2 : Entity 
+        => GetAll(typeof(T1), typeof(T2));
+
+    /// <summary>
+    /// Gets all entities of the specified types.
+    /// </summary>
+    public List<Entity> GetAll<T1, T2, T3>() where T1 : Entity where T2 : Entity where T3 : Entity 
+        => GetAll(typeof(T1), typeof(T2), typeof(T3));
+
+    /// <summary>
+    /// Gets all entities of the specified types.
+    /// </summary>
+    public List<Entity> GetAll<T1, T2, T3, T4>() 
+        where T1 : Entity where T2 : Entity where T3 : Entity where T4 : Entity
+        => GetAll(typeof(T1), typeof(T2), typeof(T3), typeof(T4));
+
+    /// <summary>
+    /// Gets all entities of the specified types.
+    /// </summary>
+    public List<Entity> GetAll<T1, T2, T3, T4, T5>() 
+        where T1 : Entity where T2 : Entity where T3 : Entity where T4 : Entity where T5 : Entity
+        => GetAll(typeof(T1), typeof(T2), typeof(T3), typeof(T4), typeof(T5));
+
+    /// <summary>
     /// Adds a parent entity and its children to the store, establishing relationships.
     /// </summary>
     /// <param name="parent">The parent entity.</param>
@@ -28,6 +135,8 @@ public sealed class EcStore
         _lock.EnterWriteLock();
         try
         {
+            ensureEntityIndexed(parent);
+
             if (children.Length > 0)
             {
                 bool childrenChanged = false;
@@ -37,6 +146,8 @@ public sealed class EcStore
                 foreach (var child in children)
                 {
                     if (child is null) continue;
+
+                    if (child.Id == 0) child.Id = generateUniqueId();
 
                     // Validation: Ensure child doesn't already have a different parent
                     validateChildRelationship(child, parent.Id);
@@ -64,8 +175,6 @@ public sealed class EcStore
                     parent.ChildIds = combined;
                 }
             }
-
-            ensureEntityIndexed(parent);
         }
         finally
         {
@@ -81,8 +190,23 @@ public sealed class EcStore
         }
     }
 
+    private uint generateUniqueId()
+    {
+        uint id;
+        do
+        {
+            id = (uint)Random.Shared.Next(1, int.MaxValue);
+        } while (_idIndex.ContainsKey(id));
+        return id;
+    }
+
     private void ensureEntityIndexed(Entity entity)
     {
+        if (entity.Id == 0)
+        {
+            entity.Id = generateUniqueId();
+        }
+
         var id = entity.Id;
         // TryAdd returns true if the key was not found and was added.
         // This avoids the O(N) list.Contains check, since an entity not in _idIndex 
@@ -126,58 +250,6 @@ public sealed class EcStore
             return _typeLists.TryGetValue(typeof(T), out var list) && list.Count > 0 
                 ? list[0] as T 
                 : null;
-        }
-        finally
-        {
-            _lock.ExitReadLock();
-        }
-    }
-
-    /// <summary>
-    /// Gets all entities, optionally filtered by the types of the provided targets.
-    /// </summary>
-    public List<Entity> GetAll(params Entity[] filterTargets)
-    {
-        _lock.EnterReadLock();
-        try
-        {
-            if (filterTargets.Length == 0)
-            {
-                var result = new List<Entity>(_idIndex.Count);
-                foreach (var list in _typeLists.Values)
-                {
-                    result.AddRange(list);
-                }
-                return result;
-            }
-
-            var capacity = 0;
-            var processedTypes = new HashSet<Type>();
-
-            // Calculate exact capacity to avoid re-allocations
-            foreach (var target in filterTargets)
-            {
-                if (target is null) continue;
-                var type = target.GetType();
-                if (processedTypes.Add(type) && _typeLists.TryGetValue(type, out var list))
-                {
-                    capacity += list.Count;
-                }
-            }
-
-            var filteredResult = new List<Entity>(capacity);
-            processedTypes.Clear();
-
-            foreach (var target in filterTargets)
-            {
-                if (target is null) continue;
-                var type = target.GetType();
-                if (processedTypes.Add(type) && _typeLists.TryGetValue(type, out var list))
-                {
-                    filteredResult.AddRange(list);
-                }
-            }
-            return filteredResult;
         }
         finally
         {

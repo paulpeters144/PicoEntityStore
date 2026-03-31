@@ -8,7 +8,7 @@ public abstract class Entity
     /// <summary>
     /// Unique identifier for the entity.
     /// </summary>
-    public uint Id { get; internal set; } = (uint)Random.Shared.Next(1, int.MaxValue);
+    public uint Id { get; internal set; }
 
     internal uint ParentId { get; set; }
     internal uint[] ChildIds { get; set; } = [];
