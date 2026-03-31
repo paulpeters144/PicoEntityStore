@@ -1,7 +1,7 @@
-namespace PicoECS;
+namespace PicoEntityStore;
 
 /// <summary>
-/// Mandatory base class for all entities in the PicoECS store.
+/// Mandatory base class for all entities in the PicoEntityStore store.
 /// </summary>
 public abstract class PicoEntity
 {

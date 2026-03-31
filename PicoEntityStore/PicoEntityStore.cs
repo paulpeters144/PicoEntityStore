@@ -1,13 +1,13 @@
 using System.Runtime.CompilerServices;
 
-[assembly: InternalsVisibleTo("PicoECS.Tests")]
+[assembly: InternalsVisibleTo("PicoEntityStore.Tests")]
 
-namespace PicoECS;
+namespace PicoEntityStore;
 
 /// <summary>
 /// A fast, thread-safe store for entities and their relationships.
 /// </summary>
-public sealed class PicoStore
+public sealed class PicoEntityStore
 {
     private readonly Dictionary<Type, List<PicoEntity>> _typeLists = [];
     private readonly Dictionary<uint, PicoEntity> _idIndex = [];

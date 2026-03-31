@@ -1,4 +1,4 @@
 using BenchmarkDotNet.Running;
-using PicoECS.Benchmarks;
+using PicoEntityStore.Benchmarks;
 
 var summary = BenchmarkRunner.Run<StoreBenchmarks>();

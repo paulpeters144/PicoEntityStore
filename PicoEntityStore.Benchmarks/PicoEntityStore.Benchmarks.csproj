@@ -1,7 +1,7 @@
-﻿<Project Sdk="Microsoft.NET.Sdk">
+<Project Sdk="Microsoft.NET.Sdk">
 
   <ItemGroup>
-    <ProjectReference Include="..\PicoECS\PicoECS.csproj" />
+    <ProjectReference Include="..\PicoEntityStore\PicoEntityStore.csproj" />
   </ItemGroup>
 
   <ItemGroup>

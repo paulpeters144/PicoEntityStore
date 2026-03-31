@@ -1,7 +1,7 @@
 using BenchmarkDotNet.Attributes;
-using PicoECS;
+using PicoEntityStore;
 
-namespace PicoECS.Benchmarks;
+namespace PicoEntityStore.Benchmarks;
 
 public class BenchmarkPicoEntity : PicoEntity { }
 public class OtherBenchmarkPicoEntity : PicoEntity { }
@@ -9,7 +9,7 @@ public class OtherBenchmarkPicoEntity : PicoEntity { }
 [MemoryDiagnoser]
 public class StoreBenchmarks
 {
-    private PicoStore _store = null!;
+    private PicoEntityStore _store = null!;
     private uint[] _ids = null!;
     private BenchmarkPicoEntity _root = null!;
     private List<PicoEntity> _toRemove = null!;
@@ -20,7 +20,7 @@ public class StoreBenchmarks
     [GlobalSetup]
     public void Setup()
     {
-        _store = new PicoStore();
+        _store = new PicoEntityStore();
         _ids = new uint[PicoEntityCount];
         
         for (int i = 0; i < PicoEntityCount; i++)
@@ -56,7 +56,7 @@ public class StoreBenchmarks
     [Benchmark]
     public void AddEntities()
     {
-        var store = new PicoStore();
+        var store = new PicoEntityStore();
         for (int i = 0; i < PicoEntityCount; i++)
         {
             store.Add(new BenchmarkPicoEntity());

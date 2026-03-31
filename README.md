@@ -1,13 +1,13 @@
-# PicoECS
+# PicoEntityStore
 
-PicoECS is a fast, thread-safe, and simple library for managing entities and their relationships.
+PicoEntityStore is a fast, thread-safe, and simple library for managing entities and their relationships.
 
 ---
 
 ## 📖 1. Full API Reference
 
 ```csharp
-public sealed class PicoStore
+public sealed class PicoEntityStore
 {
     public int Count { get; }
     
@@ -48,12 +48,12 @@ public class Sword : PicoEntity { }
 ```
 
 ### 2.2 Initialize the Store
-The `PicoStore` is the central hub for all your entities.
+The `PicoEntityStore` is the central hub for all your entities.
 
 ```csharp
-using PicoECS;
+using PicoEntityStore;
 
-var store = new PicoStore();
+var store = new PicoEntityStore();
 ```
 
 ### 2.3 Basic Operations
@@ -76,7 +76,7 @@ store.Remove(player);
 
 ## 🌳 3. Hierarchy & Relationships
 
-PicoECS excels at managing nested relationships. When you add entities, you can establish parent-child links immediately.
+PicoEntityStore excels at managing nested relationships. When you add entities, you can establish parent-child links immediately.
 
 ### 3.1 Creating a Hierarchy
 You can add multiple children to a parent in a single call.
@@ -136,7 +136,7 @@ store.ForEach<Position>(p => {
 
 ## 🧪 More Examples
 For more examples, explore the test suite:
-👉 **[PicoECS.Tests/StoreApiTests.cs](./PicoECS.Tests/StoreApiTests.cs)**
+👉 **[PicoEntityStore.Tests/StoreApiTests.cs](./PicoEntityStore.Tests/StoreApiTests.cs)**
 
 ## ⚖️ License
 This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
