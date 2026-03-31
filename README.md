@@ -1,6 +1,6 @@
 # PicoECS
 
-PicoECS is a fast, thread-safe, and simple way to store and find entities in your .NET applications. It is designed to handle hierarchical data—where objects are naturally nested, like items in an inventory, UI elements in a tree, or objects in a game scene.
+PicoECS is a fast, thread-safe, and simple way to store and find entities.
 
 ## PicoStore Interface
 
@@ -33,12 +33,11 @@ public sealed class PicoStore
 
 ## Why PicoECS?
 
-- **Hierarchy-First:** Easily link entities as parents and children. Removing a parent automatically cleans up all its descendants.
+- **Entity-Relationships:** Easily link entities as parents and children. Removing a parent automatically cleans up all its descendants.
 - **Thread-Safe:** Built-in support for multiple threads reading and writing at the same time using `ReaderWriterLockSlim`.
-- **Fast:** Find entities by their unique ID in O(1) time or query all entities of a specific type instantly.
 - **Simple API:** No complex setup. Just inherit from `PicoEntity` and start using the `PicoStore`.
 
-## Getting Started
+## Examples
 
 ### 1. Define Your Entities
 
